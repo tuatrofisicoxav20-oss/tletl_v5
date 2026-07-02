@@ -1,5 +1,5 @@
 # TLETL V5 — VALIDACIÓN FÍSICA
-Fecha: ___ | Luz: buena/media
+Fecha: 2026-07-02 (madrugada) | Luz: ___
 
 > Hoja de prueba manual de Emiliano. Se llena EN VIVO frente a la cámara.
 > Al terminar: si el veredicto es SÍ, se commitea esta hoja llena y se
@@ -44,11 +44,15 @@ Intents fantasma disparados: __ (meta: 0)
 > con el cubo seleccionado. FPS: overlay de estadísticas de Blender o los
 > del panel de la app de cámara; el addon refresca a ~20 Hz (timer 0.05 s).
 
-FPS: __ | Latencia percibida: baja/media/alta
-PINCH mueve cubo:        SÍ/NO
-Rotación mano 2:         SÍ/NO   *(mod PINCH → rotación Z)*
-Scale con spread:        SÍ/NO   *(dom PINCH + mod OPEN_PALM, distancia entre manos)*
-FIST frena en seco:      SÍ/NO
+FPS: ~15 (bus) | Latencia percibida: **baja** ("completamente fácil de usar")
+PINCH mueve cubo:        **SÍ**
+Rotación mano 2:         **SÍ**   *(mod PINCH → rotación Z)*
+Scale con spread:        **SÍ**   *(dom PINCH + mod OPEN_PALM, distancia entre manos)*
+FIST frena en seco:      **SÍ**
+
+Calibración final del usuario: **Gain 14 / Smoothing 1.0** (suavizado del addon
+apagado a propósito: el filtro temporal + guard/critic del core ya estabilizan
+la señal lo suficiente — hallazgo de la validación, no un default recomendado).
 
 ## 5. Bugs anotados (NO parchados)
 > Regla del máster: en validación solo se ANOTA; se parcha después con
