@@ -15,6 +15,7 @@ preservan íntegros dentro de los `.tar.gz`.
 | `tletl_control_v3.tar.gz` | `tletl_control_v3/` | 12 | Fósil. 7 .py monolíticos (~8.9k líneas). Solo referencia de ideas. |
 | `tletl_control_v4_modular.tar.gz` | `tletl_control_v4_modular/` | 20 | Primer split limpio (~1.6k líneas). Superado por el core. |
 | `tletl_control_v4_1_ai_integrado.tar.gz` | `tletl_control_v4_1_ai_integrado/` | 259 | Cantera de v5: core + apps + tletl_control viejo + backups internos. |
+| `tletl_backups.tar.gz` | `~/Documentos/tletl_backups/` | 2 | Zip del avance "core split" v4.9 (2026-05-09) + su `.sha256`. Enterrado en el cierre de F7 (2026-07-01), hash verificado antes de retirar el original. |
 
 ## Trazabilidad: qué de v5 viene de dónde
 
