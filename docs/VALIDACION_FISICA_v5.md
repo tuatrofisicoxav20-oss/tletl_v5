@@ -61,6 +61,15 @@ FIST frena en seco:      SÍ/NO
 - [sistema, no Tletl] Blender en Fedora 43 arranca con ERROR de OpenColorIO
   (config.ocio v2.5 vs librería 2.4.2, otro desfase de paquetes) — no bloquea
   la validación (solo gestión de color); se arregla cuando Fedora rebuildee.
+- [setup 2026-07-02] Rutas del bus INCONSISTENTES por default: el launcher
+  escribe `<repo>/tletl_state.json` (cwd-relativo) pero el addon lee
+  `~/tletl_state.json` (DEFAULT_BUS_PATH). Con defaults jamás se ven.
+  Workaround activo: symlink `~/tletl_state.json` → `<repo>/tletl_state.json`.
+  Fix futuro: unificar default (ruta absoluta compartida, p.ej. XDG_RUNTIME_DIR).
+- [setup 2026-07-02] `requirements.txt` pide `mediapipe>=0.10.21` SIN tope:
+  pip instala 0.10.35, que ya no trae la API legacy `mp.solutions` →
+  la app truena al arrancar. Instalado 0.10.21 (con numpy 1.26 + cv2 4.11).
+  Fix futuro: pinear `mediapipe>=0.10.21,<0.10.30` o migrar a la Tasks API.
 - ___
 
 ## Veredicto: v5.1-validated  SÍ / NO
