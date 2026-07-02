@@ -1,0 +1,6 @@
+# Tletl v5 — dependencias de runtime.
+# El core y sus tests NO requieren mediapipe (trabajan sobre landmarks ya extraídos).
+# mediapipe solo hace falta para la app en vivo (cámara) y la captura de gestos.
+numpy>=1.26
+opencv-python>=4.8
+mediapipe>=0.10.21   # requiere Python 3.12 (no disponible en 3.14 al momento de escribir)

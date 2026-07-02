@@ -1,0 +1,52 @@
+# Tletl v5 — parámetros en un solo lugar.
+# Todo override por variable de entorno tiene prioridad sobre este archivo
+# (ver tletl_core/config.py para el mapeo env -> clave).
+
+[classifier]
+k = 13                      # vecinos KNN          (env: TLETL_AI_V47_K)
+orientation_weight = 0.45   # peso de features de orientación (env: TLETL_AI_V47_ORIENTATION_WEIGHT)
+strict = true               # aplicar umbrales internos de confianza/margen
+min_confidence = 0.47       # por debajo -> NEUTRAL
+min_margin = 0.18           # margen mínimo entre top-1 y top-2
+
+[guard]
+# Cruce IA (KNN) vs regla geométrica. Si se contradicen en un gesto peligroso
+# y la IA no está segura, se bloquea a NEUTRAL.
+enabled = true
+conf_threshold = 0.55       # IA debe superar esto para imponerse sobre la regla
+margin_threshold = 0.20
+dangerous = ["PINCH", "POINT", "VICTORY", "THREE", "FIST"]
+
+[critic]
+# Crítico estricto: umbral de confianza por gesto + validación de orientación.
+enabled = true
+require_orientation = true
+
+[temporal]
+size = 7                    # tamaño de la ventana de historia por mano
+min_count = 4               # cuántas repeticiones para fijar un gesto
+
+[lowlight]
+enabled = true              # CLAHE + gamma adaptativo antes de MediaPipe
+clip_limit = 2.0
+gamma_dark = 1.6
+
+[adaptive]
+enabled = false             # APRENDIZAJE EN VIVO — OFF por default (puede degradar el banco)
+min_confidence = 0.78       # solo aprende si supera esto
+max_samples_per_gesture = 120
+
+[fedora]
+dominant_hand = "Right"     # mano que controla Fedora; la otra va al bus para Blender
+dry_run = false             # true => imprime acciones sin ejecutar ydotool
+
+[blender]
+bus_path = "tletl_state.json"
+move_gain = 4.0             # ganancia de traslación
+smoothing = 0.35           # factor de interpolación (lerp) del addon
+
+[camera]
+index = 0
+width = 1280
+height = 720
+max_num_hands = 2

@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tletl"
+version = "5.0.0"
+description = "Tletl v5 — control gestual por cámara (Fedora + Blender) sobre un core común."
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=1.26",
+    "opencv-python>=4.8",
+    "mediapipe>=0.10.21",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools]
+packages = ["tletl_core", "apps", "apps.fedora_control", "apps.blender_control", "tools"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

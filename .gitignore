@@ -1,0 +1,8 @@
+# Basura regenerable — NUNCA ignorar datasets/ ni _archive/:
+# el banco de gestos es sagrado y su ausencia en un zip ya bloqueó v5 una vez.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
