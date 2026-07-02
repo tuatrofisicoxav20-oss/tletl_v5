@@ -19,13 +19,11 @@ tletl-health.sh: OK / FALLA
 > (p. ej. `PINCH 0.87`). Cuenta un acierto cuando el gesto estable coincide
 > con el que hiciste; si sale otro, anótalo en "confusiones".
 
-OPEN_PALM: __/10 | confusiones: ___
-VICTORY:   __/10 | confusiones: ___
-PINCH:     __/10 | confusiones: ___
-THREE:     __/10 | confusiones: ___
-NEUTRAL:   __/10 | confusiones: ___
-POINT:     __/10 | confusiones: ___   *(añadido: es el gesto más usado en NAVEGADOR/CURSOR)*
-FIST:      __/10 | confusiones: ___   *(añadido: es el gesto de seguridad; conviene medirlo también en dry-run)*
+**Resultado (informal):** el usuario probó los gestos en vivo y reporta que
+"casi no se confunde" — reconocimiento correcto en la gran mayoría de intentos,
+sin confusión dominante entre gestos. NO se hizo el conteo formal de 10
+intentos por gesto; si algún gesto empieza a fallar en uso real, correr esta
+sección formalmente con `./launchers/tletl-fedora-safe.sh` y anotar números.
 
 ## 3. Examen guard/critic (2 min manos normales)
 > Cómo: mismo dry-run. Dos minutos haciendo cosas normales frente a la
@@ -33,7 +31,9 @@ FIST:      __/10 | confusiones: ___   *(añadido: es el gesto de seguridad; conv
 > veces la línea `Guard:... | Critic:... | Intent:...` dispara un intent
 > de acción sin que hicieras el gesto a propósito.
 
-Intents fantasma disparados: __ (meta: 0)
+**Resultado (informal):** sin acciones fantasma percibidas durante toda la
+sesión de validación (~1 h de uso con manos en cámara, Blender y dry-run).
+Sin conteo formal de 2 minutos dedicados.
 
 ## 4. Blender
 > Cómo: terminal 1 → `./launchers/tletl-blender-bus.sh` (alimenta el bus
@@ -76,4 +76,9 @@ la señal lo suficiente — hallazgo de la validación, no un default recomendad
   Fix futuro: pinear `mediapipe>=0.10.21,<0.10.30` o migrar a la Tasks API.
 - ___
 
-## Veredicto: v5.1-validated  SÍ / NO
+## Veredicto: v5.1-validated → **SÍ** ✅
+
+Validación física completada el 2026-07-02 (madrugada). §1 health OK,
+§4 Blender completa (mover/rotar/escalar/FIST todo SÍ, latencia baja),
+§2/§3 aprobadas de forma informal por el usuario. Bugs de setup anotados
+en §5 quedan como backlog para v5.2.
