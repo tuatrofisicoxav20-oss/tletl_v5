@@ -37,11 +37,12 @@ Intents fantasma disparados: __ (meta: 0)
 
 ## 4. Blender
 > Cómo: terminal 1 → `./launchers/tletl-blender-bus.sh` (alimenta el bus
-> sin tocar Fedora). En Blender: Edit > Preferences > Add-ons > Install →
-> `apps/blender_control/tletl_blender_addon.py`, activar. Vista 3D →
-> N-panel pestaña "Tletl" → **Iniciar Tletl**, con el cubo seleccionado.
-> FPS: overlay de estadísticas de Blender o los del panel de la app de
-> cámara; el addon refresca a ~20 Hz por diseño (timer 0.05 s).
+> sin tocar Fedora). El addon YA está instalado y activado (2026-07-01,
+> headless; el bridge viejo de v3 quedó desactivado para que no mueva el
+> objeto en paralelo). Si Blender estaba abierto de antes, ciérralo y
+> ábrelo de nuevo. Vista 3D → N-panel pestaña "Tletl" → **Iniciar Tletl**,
+> con el cubo seleccionado. FPS: overlay de estadísticas de Blender o los
+> del panel de la app de cámara; el addon refresca a ~20 Hz (timer 0.05 s).
 
 FPS: __ | Latencia percibida: baja/media/alta
 PINCH mueve cubo:        SÍ/NO
@@ -53,6 +54,13 @@ FIST frena en seco:      SÍ/NO
 > Regla del máster: en validación solo se ANOTA; se parcha después con
 > tests, nunca en caliente.
 
+- [setup 2026-07-01] El README/addon dice "instalar `tletl_blender_addon.py`"
+  como archivo suelto, pero su fallback de import necesita `state_reader.py`
+  AL LADO → instalado solo, truena con `ModuleNotFoundError: state_reader`.
+  Fix futuro: distribuir como zip/carpeta con ambos archivos y corregir README.
+- [sistema, no Tletl] Blender en Fedora 43 arranca con ERROR de OpenColorIO
+  (config.ocio v2.5 vs librería 2.4.2, otro desfase de paquetes) — no bloquea
+  la validación (solo gestión de color); se arregla cuando Fedora rebuildee.
 - ___
 
 ## Veredicto: v5.1-validated  SÍ / NO
