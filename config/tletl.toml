@@ -75,6 +75,7 @@ fps = 30
 max_num_hands = 2
 proc_width = 640            # ancho al que se reduce el frame para el detector (0 = sin reducir)
 headless = false            # true => sin ventana OpenCV (para alimentar solo el bus). env: TLETL_HEADLESS
+fourcc = "MJPG"             # formato pedido a la cámara (MJPG suele dar 30 fps a 720p por USB; "" = no tocar). env: TLETL_CAMERA_FOURCC
 
 [tracker]
 # Detector de manos. "auto" = MediaPipe Hand Landmarker (Tasks API) como
@@ -87,6 +88,8 @@ det_conf = 0.72
 track_conf = 0.72
 model_complexity = 1        # solo backend legacy (0, 1, 2)
 gesture_hint = false        # segunda opinión con gesture_recognizer.task (FIST/OPEN_PALM/POINT/VICTORY). env: TLETL_GESTURE_HINT
+gesture_model_path = ""     # ruta a gesture_recognizer.task ("" => junto al modelo de manos). env: TLETL_GESTURE_MODEL
+gesture_hint_min_score = 0.5  # score mínimo del recognizer para tomar en cuenta su opinión
 
 [paths]
 bank = ""                   # "" => datasets/tletl_gesture_bank_v2_features.jsonl (env: TLETL_GESTURE_BANK)

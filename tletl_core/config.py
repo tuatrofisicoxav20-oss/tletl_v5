@@ -62,12 +62,13 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
     "blender": {"bus_path": ""},   # alias legacy de [bus].path (se conserva por compatibilidad)
     "bus": {"path": "", "include_features": False, "udp_target": ""},
     "camera": {"index": 0, "width": 1280, "height": 720, "fps": 30, "max_num_hands": 2,
-                "proc_width": 640, "headless": False},
+                "proc_width": 640, "headless": False, "fourcc": "MJPG"},
     # backend "auto" = MediaPipe Hand Landmarker (Tasks API) como principal
     # (aprobado por el usuario 2026-09-30); "legacy" (mp.solutions) solo como
     # respaldo si Tasks no está disponible. auto_download baja el .task si falta.
     "tracker": {"backend": "auto", "model_path": "", "det_conf": 0.72, "track_conf": 0.72,
-                 "model_complexity": 1, "auto_download": True, "gesture_hint": False},
+                 "model_complexity": 1, "auto_download": True,
+                 "gesture_hint": False, "gesture_model_path": "", "gesture_hint_min_score": 0.5},
     "paths": {"bank": ""},
 }
 
@@ -90,6 +91,8 @@ ENV_MAP: Dict[str, Tuple[str, str, Callable[[str], Any]]] = {
     "TLETL_TRACKER_MODEL": ("tracker", "model_path", str),
     "TLETL_TRACKER_AUTO_DOWNLOAD": ("tracker", "auto_download", _flag),
     "TLETL_GESTURE_HINT": ("tracker", "gesture_hint", _flag),
+    "TLETL_GESTURE_MODEL": ("tracker", "gesture_model_path", str),
+    "TLETL_CAMERA_FOURCC": ("camera", "fourcc", str),
     "TLETL_GESTURE_BANK": ("paths", "bank", str),
 }
 

@@ -123,9 +123,16 @@ Para activarlo: `[tracker] gesture_hint = true` en `config/tletl.toml`
 | Banco de gestos (tool) | releía el JSONL completo **en cada frame** | conteos en memoria |
 | Ventana OpenCV | siempre | `--headless` para alimentar Blender/CAD sin ventana |
 
-Los números exactos de `predict()` antes/después están en la documentación
-general (`docs/DOCUMENTACION_TLETL_V5.md`, sección de rendimiento), medidos
-en este entorno con `tools/bench_classifier.py`.
+Medido en este entorno (200 predicciones, k=13, banco balanceado 2 363×67):
+`predict()` pasó de **58.1 ms** a **0.95 ms** por mano (≈61×). A 58 ms por
+predicción y dos manos, el solo clasificador ya limitaba el bucle a ~15 fps,
+que es exactamente lo que mediste en la validación. Ahora el detector de
+MediaPipe (10–14 ms) es el costo dominante y el bucle puede ir a la
+velocidad de la cámara.
+
+Bonus encontrado en la misma revisión: el realce de baja luz (CLAHE + gamma)
+**oscurecía** los frames oscuros por una doble inversión de la gamma (el
+exponente quedaba en 1.61 en vez de 0.625). Está corregido y con test.
 
 Lo que **no** cambia: el clasificador sigue siendo el KNN sobre tu banco,
 CPU, sin CUDA, sin modelos grandes. Solo corre más rápido.
