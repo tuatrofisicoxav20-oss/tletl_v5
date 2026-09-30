@@ -18,7 +18,7 @@ from typing import Any, Dict, Optional
 
 from .adaptive import AdaptiveGestureMemory
 from .classifier import Prediction, RobustKNNRuntime
-from .config import load_config
+from .config import adaptive_path_from_config, load_config
 from .critic import CriticResult, strict_critic
 from .guard import geometric_rule, rule_guard
 from .orientation import orientation_bucket
@@ -60,9 +60,10 @@ class TletlPipeline:
         # Un TemporalFilter independiente por mano (dom, mod, ...).
         self._temporal: Dict[str, TemporalFilter] = {}
 
-        # Memoria adaptativa (apagada por default vía config).
+        # Memoria adaptativa (apagada por default vía config). Vive en ~/.tletl/,
+        # NUNCA junto al banco (antes se escribía en datasets/).
         if adaptive_path is None:
-            adaptive_path = Path(bank_path).expanduser().resolve().parent / "tletl_adaptive_runtime.json"
+            adaptive_path = adaptive_path_from_config(self.cfg)
         a = c["adaptive"]
         self.adaptive = AdaptiveGestureMemory(
             adaptive_path,

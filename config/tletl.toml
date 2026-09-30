@@ -1,6 +1,7 @@
 # Tletl v5 — parámetros en un solo lugar.
 # Todo override por variable de entorno tiene prioridad sobre este archivo
-# (ver tletl_core/config.py para el mapeo env -> clave).
+# (ver tletl_core/config.py: ENV_MAP). Las rutas vacías ("") usan el default
+# de tletl_core/paths.py (todo el runtime vive en ~/.tletl/).
 
 [classifier]
 k = 13                      # vecinos KNN          (env: TLETL_AI_V47_K)
@@ -22,31 +23,65 @@ dangerous = ["PINCH", "POINT", "VICTORY", "THREE", "FIST"]
 enabled = true
 require_orientation = true
 
+[critic.min_conf]
+# Confianza mínima por gesto. Solo hace falta poner los que cambies.
+# PINCH bajó de 0.72 a 0.62 (validación 2026-07-02: de día el KNN acierta PINCH
+# con 0.62–0.70 y el critic lo mataba). Si ves pinzas fantasma, súbelo.
+OPEN_PALM = 0.70
+FIST = 0.68
+POINT = 0.69
+VICTORY = 0.72
+PINCH = 0.62
+THREE = 0.72
+NEUTRAL = 0.55
+
 [temporal]
 size = 7                    # tamaño de la ventana de historia por mano
 min_count = 4               # cuántas repeticiones para fijar un gesto
 
 [lowlight]
-enabled = true              # CLAHE + gamma adaptativo antes de MediaPipe
+enabled = true              # CLAHE + gamma adaptativo antes de MediaPipe (env: TLETL_LOWLIGHT)
 clip_limit = 2.0
-gamma_dark = 1.6
+gamma_dark = 1.6            # gamma del modo más oscuro; los intermedios se derivan de este
 
 [adaptive]
-enabled = false             # APRENDIZAJE EN VIVO — OFF por default (puede degradar el banco)
+enabled = false             # APRENDIZAJE EN VIVO — OFF por default (env: TLETL_ADAPTIVE)
 min_confidence = 0.78       # solo aprende si supera esto
 max_samples_per_gesture = 120
+path = ""                   # "" => ~/.tletl/tletl_adaptive_runtime.json (env: TLETL_ADAPTIVE_PATH)
+save_interval = 2.0         # segundos mínimos entre escrituras a disco
 
 [fedora]
-dominant_hand = "Right"     # mano que controla Fedora; la otra va al bus para Blender
-dry_run = false             # true => imprime acciones sin ejecutar ydotool
+dominant_hand = "Right"     # mano que controla Fedora; la otra va al bus (env: TLETL_DOMINANT_HAND)
+dry_run = false             # true => imprime acciones sin ejecutar ydotool (env: TLETL_DRY_RUN)
+safety_hold = 0.35          # segundos de FIST estable antes de pausar (evita puños fantasma al agarrar cosas)
+tap_max = 0.35              # CURSOR: PINCH más corto que esto = click
+drag_min = 0.40             # CURSOR: PINCH más largo que esto = arrastre
+action_conf = 0.52          # confianza mínima del KNN para ejecutar una acción
+
+[bus]
+path = ""                   # "" => ~/.tletl/tletl_state.json (env: TLETL_STATE_PATH). Blender lee la MISMA ruta.
+include_features = false    # true => cada mano lleva sus ~60 features (triplica el JSON)
+udp_target = ""             # "host:puerto" para publicar cada frame por UDP (AutoCAD en Windows). env: TLETL_BUS_UDP
 
 [blender]
-bus_path = "tletl_state.json"
-move_gain = 4.0             # ganancia de traslación
-smoothing = 0.35           # factor de interpolación (lerp) del addon
+bus_path = ""               # LEGACY: alias de [bus].path. La ganancia/suavizado viven en las prefs del addon.
 
 [camera]
-index = 0
+index = 0                   # (env: TLETL_CAMERA)
 width = 1280
 height = 720
+fps = 30
 max_num_hands = 2
+proc_width = 640            # ancho al que se reduce el frame para el detector (0 = sin reducir)
+headless = false            # true => sin ventana OpenCV (para alimentar solo el bus). env: TLETL_HEADLESS
+
+[tracker]
+backend = "auto"            # "auto" | "legacy" (mp.solutions) | "tasks" (MediaPipe HandLandmarker). env: TLETL_TRACKER_BACKEND
+model_path = ""             # ruta a hand_landmarker.task para el backend tasks ("" => ~/.tletl/models/). env: TLETL_TRACKER_MODEL
+det_conf = 0.72
+track_conf = 0.72
+model_complexity = 1        # solo backend legacy (0, 1, 2)
+
+[paths]
+bank = ""                   # "" => datasets/tletl_gesture_bank_v2_features.jsonl (env: TLETL_GESTURE_BANK)

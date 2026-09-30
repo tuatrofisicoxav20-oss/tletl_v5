@@ -42,8 +42,8 @@ class TletlIntent:
 
 @dataclass
 class TletlFrameState:
-    version: int = 4
-    app_version: str = "4.9-core-split"
+    version: int = 5
+    app_version: str = "5.2-core"
     timestamp: float = 0.0
 
     frame_width: int = 0
