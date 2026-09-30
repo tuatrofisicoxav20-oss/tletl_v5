@@ -10,7 +10,7 @@ del 2026-07-02. Donde algo no se pudo probar en vivo lo digo tal cual.
 
 | # | Qué | Veredicto | Estado en el repo |
 |---|-----|-----------|-------------------|
-| 1 | **MediaPipe Hand Landmarker (Tasks API)** — `google-ai-edge/mediapipe` | **Recomendación al cien.** Mismos 21 landmarks que hoy, así que el banco de 2 652 muestras sigue valiendo. CPU: 13.8 ms/frame medidos aquí. Y es obligatorio: la API vieja (`mp.solutions`) **ya no existe** en mediapipe ≥ 0.10.31 / 1.0 (verificado con 1.0.1). | **Adaptado.** Backend `tasks` en `apps/common/hand_tracker.py`, selección `auto` en `config/tletl.toml` `[tracker]`, modelos con `./launchers/tletl-fetch-models.sh`. Pendiente: prueba con cámara real (tú). |
+| 1 | **MediaPipe Hand Landmarker (Tasks API)** — `google-ai-edge/mediapipe` | **Recomendación al cien.** Mismos 21 landmarks que hoy, así que el banco de 2 652 muestras sigue valiendo. CPU: 13.8 ms/frame medidos aquí. Y es obligatorio: la API vieja (`mp.solutions`) **ya no existe** en mediapipe ≥ 0.10.31 / 1.0 (verificado con 1.0.1). | **APROBADO por ti el 2026-09-30 y aplicado como backend principal.** `[tracker] backend = "auto"` usa Tasks siempre que exista y descarga el modelo solo si falta (`auto_download = true`); la API vieja queda únicamente como respaldo. Pendiente: prueba con cámara real (tú). |
 | 2 | **MediaPipe Gesture Recognizer (Tasks)** como *segunda opinión* | **Recomendado, opcional.** Reconoce puño, palma, índice y victoria de forma independiente al KNN. Cuando ambos coinciden, el guard deja pasar el gesto aunque la confianza del KNN sea justa; cuando no, todo sigue igual. Ataca directo a los dos fallos medidos (FIST fantasma, PINCH que moría por umbral). No sabe PINCH ni THREE: para eso está el KNN. | **Adaptado, apagado por default** (`[tracker] gesture_hint = true` para activarlo). Necesita tu visto bueno para dejarlo encendido. |
 | 3 | **Enriquecer el banco** (no es un repo, es tu cámara) | **Es lo que más precisión da por hora invertida.** El banco actual se capturó de noche; FIST en pose de escritorio y PINCH de día fallan por falta de muestras, no por el detector. | Herramienta lista: `./launchers/tletl-bank.sh --dual-hand`. Guía en §4. |
 | 4 | RTMPose-hand vía `rtmlib` (Tau-J/rtmlib) | Viable en CPU (ONNX Runtime/OpenVINO), 21 puntos en el mismo orden, **pero solo 2D**: se pierden las 13 features de orientación y las de profundidad. Plan B si MediaPipe fallara con oclusiones. | No adaptado. Costo estimado: 1 día (adapter + desactivar orientación en el critic). |
@@ -18,11 +18,11 @@ del 2026-07-02. Donde algo no se pudo probar en vivo lo digo tal cual.
 | 6 | WiLoR (rolpotamias/WiLoR, ECCV 2024) | Estado del arte en malla 3D de la mano. **Rechazado**: exige CUDA (PyTorch 2.0 + CUDA 11.7, transformer ViT). Rompe la regla "todo en CPU, cero CUDA" del máster. | No. |
 | 7 | HaMeR (geopavlakos/hamer, CVPR 2024) | Igual que WiLoR: ViT-H, GPU, registro en MANO. **Rechazado.** | No. |
 
-**Mi recomendación para tu visto bueno:** dejar `[tracker] backend = "auto"`
-(usa `tasks` en cualquier mediapipe moderno), activar `gesture_hint = true`
-después de probarlo 10 minutos en dry-run, y dedicar una sesión de 20 minutos
-a capturar muestras diurnas de FIST y PINCH. Con eso se atacan las tres
-causas raíz que salieron en la validación.
+**Estado de las decisiones:** #1 ya tiene tu visto bueno y está aplicado
+(`[tracker] backend = "auto"` prefiere Tasks). Quedan por decidir: activar
+`gesture_hint = true` después de probarlo 10 minutos en dry-run, y dedicar
+una sesión de 20 minutos a capturar muestras diurnas de FIST y PINCH. Con
+eso se atacan las tres causas raíz que salieron en la validación.
 
 ---
 
@@ -50,11 +50,14 @@ venían del KNN en Python puro (ver §3).
 **Qué se hizo para adaptarlo** (todo en `apps/`, el core no toca MediaPipe):
 
 1. `apps/common/hand_tracker.py`: clase `HandTracker` con dos backends,
-   `legacy` (mp.solutions, si existe) y `tasks` (HandLandmarker). Ambos
-   devuelven la misma lista de `HandDetection(landmarks: 21 Point, handedness,
-   score)`. `backend = "auto"` elige legacy si está disponible y tasks si no.
+   `tasks` (HandLandmarker, principal) y `legacy` (mp.solutions, solo
+   respaldo). Ambos devuelven la misma lista de `HandDetection(landmarks: 21
+   Point, handedness, score)`. `backend = "auto"` elige tasks siempre que la
+   API Tasks exista; cae a legacy solo si no.
 2. `tools/fetch_models.py` + `launchers/tletl-fetch-models.sh`: descarga
    `hand_landmarker.task` y `gesture_recognizer.task` a `~/.tletl/models/`.
+   Con `[tracker] auto_download = true` la app lo baja sola la primera vez
+   si falta (unos 8 MB, una sola vez).
 3. `apps/fedora_control/main.py` y `tools/gesture_bank.py` ya no importan
    mediapipe directamente: usan el tracker. Así el día que quieras probar
    rtmlib o YOLO, es un backend más en un solo archivo.
@@ -200,7 +203,9 @@ TensorFlow reciente; no lo recomiendo.
 
 ## 6. Lo que necesito de ti
 
-1. **Visto bueno a `backend = "auto"`** (ya está así) y prueba con cámara.
+1. ~~Visto bueno a Hand Landmarker~~ **dado y aplicado.** Falta tu prueba con
+   cámara: `./launchers/tletl-fedora-safe.sh` y confirmar `backend:tasks` en
+   el panel.
 2. **Visto bueno a `gesture_hint = true`** tras probarlo en dry-run.
 3. **Sesión de captura** de FIST/PINCH/NEUTRAL de día (§4).
 4. Si quieres el plan B (rtmlib) o C (YOLO), dime y lo adapto como backend;

@@ -77,11 +77,16 @@ proc_width = 640            # ancho al que se reduce el frame para el detector (
 headless = false            # true => sin ventana OpenCV (para alimentar solo el bus). env: TLETL_HEADLESS
 
 [tracker]
-backend = "auto"            # "auto" | "legacy" (mp.solutions) | "tasks" (MediaPipe HandLandmarker). env: TLETL_TRACKER_BACKEND
-model_path = ""             # ruta a hand_landmarker.task para el backend tasks ("" => ~/.tletl/models/). env: TLETL_TRACKER_MODEL
+# Detector de manos. "auto" = MediaPipe Hand Landmarker (Tasks API) como
+# principal (aprobado 2026-09-30); cae a "legacy" (mp.solutions) solo si Tasks
+# no está disponible. "tasks" o "legacy" lo fuerzan. env: TLETL_TRACKER_BACKEND
+backend = "auto"
+model_path = ""             # ruta a hand_landmarker.task ("" => ~/.tletl/models/hand_landmarker.task). env: TLETL_TRACKER_MODEL
+auto_download = true        # si falta el .task, lo descarga una vez (~8 MB) en vez de tronar. env: TLETL_TRACKER_AUTO_DOWNLOAD
 det_conf = 0.72
 track_conf = 0.72
 model_complexity = 1        # solo backend legacy (0, 1, 2)
+gesture_hint = false        # segunda opinión con gesture_recognizer.task (FIST/OPEN_PALM/POINT/VICTORY). env: TLETL_GESTURE_HINT
 
 [paths]
 bank = ""                   # "" => datasets/tletl_gesture_bank_v2_features.jsonl (env: TLETL_GESTURE_BANK)
