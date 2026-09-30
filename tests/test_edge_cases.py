@@ -19,38 +19,59 @@ from tletl_core.pipeline import TletlPipeline
 
 @pytest.fixture(scope="module")
 def runtime(bank_path):
-    return RobustKNNRuntime(bank_path, k=13)
+    return RobustKNNRuntime(bank_path, k=13, verbose=False)
 
 
 @pytest.fixture(scope="module")
 def pipeline(bank_path):
     return TletlPipeline(bank_path, config=load_config(),
-                         adaptive_path="/tmp/tletl_adaptive_edge_ignore.json")
+                         adaptive_path="/tmp/tletl_adaptive_edge_ignore.json", verbose=False)
 
 
 # ── Entradas degeneradas ─────────────────────────────────────────────────────
 
 def test_classifier_empty_features_no_crash(runtime):
-    pred = runtime.predict({}, strict=True)
-    assert pred.label in ("NEUTRAL", *runtime.counts.keys())
-    assert math.isfinite(pred.confidence)
+    """Sin features no hay vecinos válidos: NEUTRAL/UNKNOWN/NO_VOTES.
+    (Antes: todas las distancias eran el centinela 1e9, ganaban las primeras k
+    muestras del banco balanceado y salía OPEN_PALM con confianza 1.0.)"""
+    for strict in (True, False):
+        pred = runtime.predict({}, strict=strict)
+        assert pred.label == "NEUTRAL"
+        assert pred.raw_label == "UNKNOWN"
+        assert pred.reason == "NO_VOTES"
+        assert pred.ok is False
+        assert pred.confidence == 0.0 and pred.margin == 0.0
+        assert pred.votes == {}
+        assert math.isfinite(pred.confidence)
 
 
 def test_classifier_nan_features_no_crash(runtime):
     feats = {"index_tip_wrist": float("nan"), "thumb_tip_index_tip": float("inf"), "palm_width": 1.0}
     pred = runtime.predict(feats, strict=False)
     assert math.isfinite(pred.confidence)
+    assert pred.reason == "NO_VOTES" and pred.raw_label == "UNKNOWN"
+
+
+def test_classifier_all_nan_full_key_set_is_no_votes(runtime):
+    feats = {k: float("nan") for k in runtime.keys}
+    pred = runtime.predict(feats)
+    assert pred.reason == "NO_VOTES" and not pred.ok
 
 
 def test_pipeline_empty_features_no_crash(pipeline):
+    pipeline.reset("edge")
     res = pipeline.process_features({}, hand="edge")
-    assert res.stable_gesture  # algún string, sin crash
+    assert res.stable_gesture == "NEUTRAL"
+    assert res.raw_gesture == "UNKNOWN"
+    assert res.ok is False
+    assert res.rule_raw == "NEUTRAL"
     assert 0.0 <= res.confidence <= 1.0
 
 
-def test_geometric_rule_empty_is_neutral_or_fist():
-    # sin features, todos los dedos cuentan como no-extendidos → FIST o NEUTRAL, sin crash
-    assert geometric_rule({}) in ("NEUTRAL", "FIST")
+def test_geometric_rule_empty_is_neutral():
+    # sin evidencia de dedos NO puede ser FIST (gesto peligroso): NEUTRAL
+    assert geometric_rule({}) == "NEUTRAL"
+    assert geometric_rule({"palm_width": 1.0, "thumb_tip_index_tip": 0.1}) == "NEUTRAL"
 
 
 def test_orientation_bucket_empty_is_unknown():

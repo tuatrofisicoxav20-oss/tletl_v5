@@ -29,8 +29,23 @@ def _pinch_close(features: Dict[str, float]) -> bool:
     return d < 0.42
 
 
+_FINGERS = ("index", "middle", "ring", "pinky")
+_FINGER_SUFFIXES = ("_vertical", "_curl", "_tip_mcp")
+
+
+def _has_finger_evidence(features: Dict[str, float]) -> bool:
+    """True si el dict trae al menos una feature de geometría de dedos."""
+    return any(f"{name}{suffix}" in features for name in _FINGERS for suffix in _FINGER_SUFFIXES)
+
+
 def geometric_rule(features: Dict[str, float]) -> str:
     """Segunda opinión por geometría pura (sin banco). Devuelve un label de LABELS o 'NEUTRAL'."""
+    # Sin evidencia de los dedos no hay veredicto: antes un dict vacío (o sin
+    # claves de dedos) contaba los cuatro dedos como cerrados y devolvía FIST,
+    # un gesto peligroso (SAFETY_STOP) inventado de la nada.
+    if not _has_finger_evidence(features):
+        return "NEUTRAL"
+
     index_ext = _finger_extended(features, "index")
     middle_ext = _finger_extended(features, "middle")
     ring_ext = _finger_extended(features, "ring")

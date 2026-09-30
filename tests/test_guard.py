@@ -142,3 +142,21 @@ class TestGeometricRule:
             features = extract_live_features(lm)
             result = geometric_rule(features)
             assert result in LABELS, f"geometric_rule('{gesture}') -> '{result}' no está en LABELS"
+
+    def test_no_finger_evidence_is_neutral_not_fist(self):
+        """BUG: un dict vacío contaba los 4 dedos como cerrados y devolvía FIST
+        (SAFETY_STOP) sin ninguna evidencia. Sin claves de dedos -> NEUTRAL."""
+        assert geometric_rule({}) == "NEUTRAL"
+        assert geometric_rule({"palm_width": 1.0, "thumb_tip_index_tip": 0.2}) == "NEUTRAL"
+        assert geometric_rule({"palm_facing_score": 0.9}) == "NEUTRAL"
+
+    def test_explicit_closed_fingers_is_still_fist(self):
+        """Con evidencia explícita de dedos cerrados, FIST sigue siendo FIST."""
+        closed = {}
+        for name in ("index", "middle", "ring", "pinky"):
+            closed[f"{name}_vertical"] = 0.0
+            closed[f"{name}_curl"] = -0.1
+            closed[f"{name}_tip_mcp"] = 0.30
+        assert geometric_rule(closed) == "FIST"
+        # una sola clave de dedo ya es evidencia
+        assert geometric_rule({"index_curl": -0.1}) == "FIST"

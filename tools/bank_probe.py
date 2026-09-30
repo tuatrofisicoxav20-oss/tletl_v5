@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Estadísticas del banco de gestos de Tletl v5.
 
 Reporta: total de muestras, distribución por gesto, balance, features compartidas
@@ -7,7 +5,10 @@ Reporta: total de muestras, distribución por gesto, balance, features compartid
 faltantes, muestras con pocas features, claves de orientación ausentes).
 
 Uso:  python -m tools.bank_probe [--bank ruta.jsonl]
+      (sin --bank usa [paths].bank del toml / TLETL_GESTURE_BANK / datasets/)
 """
+
+from __future__ import annotations
 
 import argparse
 import json
@@ -15,10 +16,12 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, List
 
+from tletl_core.config import bank_path_from_config, load_config
 from tletl_core.features import LABELS, META_KEYS, get_features, get_label
 from tletl_core.orientation import ORIENTATION_KEYS
+from tletl_core.paths import default_bank_path
 
-DEFAULT_BANK = Path(__file__).resolve().parent.parent / "datasets" / "tletl_gesture_bank_v2_features.jsonl"
+DEFAULT_BANK = default_bank_path()
 
 
 def probe_bank(path: str | Path) -> Dict[str, Any]:
@@ -102,9 +105,11 @@ def format_report(stats: Dict[str, Any]) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Estadísticas del banco de gestos Tletl v5")
-    ap.add_argument("--bank", default=str(DEFAULT_BANK))
+    ap.add_argument("--bank", default=None,
+                    help="ruta al banco JSONL (default: la que resuelve la config)")
     args = ap.parse_args()
-    print(format_report(probe_bank(args.bank)))
+    bank = Path(args.bank) if args.bank else bank_path_from_config(load_config())
+    print(format_report(probe_bank(bank)))
     return 0
 
 

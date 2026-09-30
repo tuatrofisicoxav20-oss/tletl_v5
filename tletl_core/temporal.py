@@ -3,10 +3,15 @@ from __future__ import annotations
 import math
 import time
 from collections import Counter, deque
-from typing import Deque, Optional, Tuple
+from typing import Callable, Deque, Optional, Tuple
 
 from .classifier import Prediction
 from .geometry import clamp
+
+# Fuente de tiempo por default. MotionTracker y Hold aceptan un `clock`
+# inyectable para que los tests sean deterministas (antes usaban time.time()
+# directo y el test del swipe tenía que aceptar None "según el timing real").
+Clock = Callable[[], float]
 
 
 class TemporalFilter:
@@ -37,13 +42,14 @@ class TemporalFilter:
 
 
 class MotionTracker:
-    def __init__(self, maxlen: int = 9):
+    def __init__(self, maxlen: int = 9, clock: Clock = time.time):
         self.points: Deque[Tuple[float, float, float]] = deque(maxlen=maxlen)
         self.last_swipe_time = 0.0
         self.last_velocity = 0.0
+        self._clock = clock
 
     def update(self, x: float, y: float) -> None:
-        now = time.time()
+        now = self._clock()
         if self.points:
             t0, x0, y0 = self.points[-1]
             dt = max(now - t0, 1e-3)
@@ -53,7 +59,7 @@ class MotionTracker:
     def swipe(self) -> Optional[str]:
         if len(self.points) < 5:
             return None
-        now = time.time()
+        now = self._clock()
         if now - self.last_swipe_time < 0.55:
             return None
 
@@ -101,12 +107,13 @@ class CursorDelta:
 
 
 class Hold:
-    def __init__(self):
+    def __init__(self, clock: Clock = time.time):
         self.name: Optional[str] = None
         self.t0 = 0.0
+        self._clock = clock
 
     def progress(self, name: str, seconds: float) -> float:
-        now = time.time()
+        now = self._clock()
         if self.name != name:
             self.name = name
             self.t0 = now

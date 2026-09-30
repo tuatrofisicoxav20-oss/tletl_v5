@@ -10,15 +10,23 @@ Diseño:
 - Cap de muestras por gesto para evitar archivos ilimitados.
 - Escritura atómica (escribe a .tmp y luego renombra) para evitar
   archivos corruptos si el proceso es interrumpido.
+- Escritura THROTTLED: antes cada observe() reescribía el JSON completo
+  (una vez por frame con la memoria activa). Ahora la primera escritura de la
+  sesión es inmediata y las siguientes se agrupan cada `save_interval`
+  segundos; `flush()` persiste lo pendiente (el pipeline lo llama en close()).
+- Las muestras aprendidas SÍ se usan: `samples()` las devuelve en el formato
+  que RobustKNNRuntime acepta como `extra_samples` (antes se guardaban y nada
+  las leía, así que el "aprendizaje en vivo" no tenía efecto).
 - Sin dependencias de ventanas, ydotool ni bpy.
 """
 
 import json
 import math
-import os
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from .paths import ensure_parent
 
 
 # Features de posición absoluta que NUNCA se guardan
@@ -49,6 +57,8 @@ class AdaptiveGestureMemory:
         enabled: bool = False,
         min_confidence: float = 0.78,
         max_samples_per_gesture: int = 120,
+        save_interval: float = 2.0,
+        clock: Callable[[], float] = time.time,
     ):
         """
         Args:
@@ -58,11 +68,20 @@ class AdaptiveGestureMemory:
                      y nunca escribe al disco.
             min_confidence: confianza mínima para aceptar una muestra.
             max_samples_per_gesture: cap de muestras por gesto.
+            save_interval: segundos mínimos entre escrituras a disco. La
+                     primera escritura tras un cambio es inmediata si aún no
+                     se ha guardado nada en esta sesión; las siguientes esperan
+                     `save_interval`. 0 = escribir en cada observe().
+            clock: fuente de tiempo inyectable (tests deterministas).
         """
         self.path = Path(path)
         self.enabled = bool(enabled)
         self.min_confidence = float(min_confidence)
         self.max_samples_per_gesture = max(1, int(max_samples_per_gesture))
+        self.save_interval = max(0.0, float(save_interval))
+        self._clock = clock
+        self._dirty = False
+        self._last_save: Optional[float] = None   # None = nada guardado en esta sesión
 
         self._data: Dict[str, Any] = {"gestures": {}}
         if self.enabled:
@@ -86,11 +105,41 @@ class AdaptiveGestureMemory:
             pass
 
     def _save_atomic(self) -> None:
-        """Escribe el JSON de forma atómica (tmp + rename)."""
+        """Escribe el JSON de forma atómica (tmp + rename).
+
+        Crea el directorio padre si falta: la ruta por default vive en
+        ~/.tletl/, que en una máquina nueva no existe, y antes el primer
+        observe() con confianza alta tumbaba la app con FileNotFoundError.
+        """
+        ensure_parent(self.path)
         tmp_path = self.path.with_suffix(".tmp")
         payload = json.dumps(self._data, indent=2, ensure_ascii=False)
         tmp_path.write_text(payload, encoding="utf-8")
-        os.replace(tmp_path, self.path)
+        tmp_path.replace(self.path)
+        self._dirty = False
+        self._last_save = self._clock()
+
+    def _save_if_due(self) -> bool:
+        """Guarda si nunca se guardó en esta sesión o si ya pasó save_interval."""
+        if not self._dirty:
+            return False
+        now = self._clock()
+        if self._last_save is not None and (now - self._last_save) < self.save_interval:
+            return False
+        self._save_atomic()
+        return True
+
+    def flush(self) -> bool:
+        """Persiste los cambios pendientes (si los hay). Devuelve True si escribió."""
+        if not self._dirty:
+            return False
+        self._save_atomic()
+        return True
+
+    @property
+    def dirty(self) -> bool:
+        """True si hay muestras en memoria que aún no se escribieron a disco."""
+        return self._dirty
 
     # ------------------------------------------------------------------
     # Limpieza de features
@@ -125,7 +174,8 @@ class AdaptiveGestureMemory:
             confidence: confianza de la predicción (0.0–1.0).
 
         Returns:
-            True si la muestra fue guardada, False en caso contrario.
+            True si la muestra fue registrada (en memoria; el disco se
+            actualiza según save_interval), False en caso contrario.
         """
         if not self.enabled:
             return False
@@ -148,8 +198,9 @@ class AdaptiveGestureMemory:
 
         bucket.append(clean)
         self._data["updated_at"] = time.time()
+        self._dirty = True
 
-        self._save_atomic()
+        self._save_if_due()
         return True
 
     def counts(self) -> Dict[str, int]:
@@ -159,3 +210,25 @@ class AdaptiveGestureMemory:
             for g, v in self._data.get("gestures", {}).items()
             if isinstance(v, list)
         }
+
+    def samples(self) -> List[Tuple[str, Dict[str, float]]]:
+        """Muestras aprendidas como lista de (gesto, features), listas para
+        `RobustKNNRuntime(extra_samples=...)`. Ignora entradas malformadas."""
+        out: List[Tuple[str, Dict[str, float]]] = []
+        gestures = self._data.get("gestures", {})
+        if not isinstance(gestures, dict):
+            return out
+        for gesture, bucket in gestures.items():
+            if not isinstance(bucket, list):
+                continue
+            for feat in bucket:
+                if not isinstance(feat, dict):
+                    continue
+                clean = {
+                    str(k): float(v)
+                    for k, v in feat.items()
+                    if isinstance(v, (int, float)) and math.isfinite(float(v))
+                }
+                if clean:
+                    out.append((str(gesture).upper(), clean))
+        return out

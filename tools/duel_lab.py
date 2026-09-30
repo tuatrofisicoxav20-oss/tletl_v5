@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Duel lab — compara configuraciones del clasificador KNN con holdout honesto.
 
 Separa el banco en train/test (sin solape), entrena el RobustKNNRuntime solo con
@@ -8,7 +6,10 @@ orientación para elegir la mejor configuración sin auto-engaño (no se evalúa
 las mismas muestras con las que se entrena).
 
 Uso:  python -m tools.duel_lab [--bank ruta.jsonl]
+      (sin --bank usa [paths].bank del toml / TLETL_GESTURE_BANK / datasets/)
 """
+
+from __future__ import annotations
 
 import argparse
 import json
@@ -18,9 +19,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from tletl_core.classifier import RobustKNNRuntime
+from tletl_core.config import bank_path_from_config, load_config
 from tletl_core.features import get_features, get_label
+from tletl_core.paths import default_bank_path
 
-DEFAULT_BANK = Path(__file__).resolve().parent.parent / "datasets" / "tletl_gesture_bank_v2_features.jsonl"
+DEFAULT_BANK = default_bank_path()
 
 
 def _split_rows(bank_path: str | Path, holdout_frac: float, seed: int
@@ -57,7 +60,7 @@ def evaluate_knn(bank_path: str | Path, *, k: int = 13, orientation_weight: floa
         tmp_path = fh.name
 
     try:
-        runtime = RobustKNNRuntime(tmp_path, k=k, orientation_weight=orientation_weight)
+        runtime = RobustKNNRuntime(tmp_path, k=k, orientation_weight=orientation_weight, verbose=False)
         hits = 0
         total = 0
         per_label_hits: Dict[str, int] = {}
@@ -107,10 +110,12 @@ def duel(bank_path: str | Path, configs: List[Dict[str, float]], *,
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Comparar configuraciones del KNN de Tletl v5")
-    ap.add_argument("--bank", default=str(DEFAULT_BANK))
+    ap.add_argument("--bank", default=None,
+                    help="ruta al banco JSONL (default: la que resuelve la config)")
     ap.add_argument("--holdout", type=float, default=0.2)
     ap.add_argument("--seed", type=int, default=7)
     args = ap.parse_args()
+    bank = Path(args.bank) if args.bank else bank_path_from_config(load_config())
 
     configs = [
         {"k": 9, "orientation_weight": 0.45},
@@ -119,7 +124,8 @@ def main() -> int:
         {"k": 21, "orientation_weight": 0.45},
     ]
     print("== Tletl v5 — duel lab (holdout) ==")
-    for r in duel(args.bank, configs, holdout_frac=args.holdout, seed=args.seed):
+    print(f"banco: {bank}")
+    for r in duel(bank, configs, holdout_frac=args.holdout, seed=args.seed):
         print(f"  k={r['k']:>2} ow={r['orientation_weight']:.2f} "
               f"train={r['train']} test={r['test']} -> acc={r['accuracy']:.4f}")
     return 0

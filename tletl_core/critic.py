@@ -80,6 +80,20 @@ def _has_orientation_features(features: Dict[str, Any]) -> bool:
     )
 
 
+def resolve_min_conf(min_conf: Optional[Dict[str, float]] = None) -> Dict[str, float]:
+    """Tabla efectiva de umbrales: MIN_CONF del módulo + overrides (claves en
+    mayúsculas). Los gestos que no vengan en `min_conf` conservan el default."""
+    if not min_conf:
+        return MIN_CONF
+    table = dict(MIN_CONF)
+    for gesture, value in min_conf.items():
+        try:
+            table[str(gesture).upper()] = float(value)
+        except (TypeError, ValueError):
+            continue
+    return table
+
+
 def strict_critic(
     gesture: str,
     confidence: float,
@@ -87,6 +101,7 @@ def strict_critic(
     votes: Optional[Any] = None,
     *,
     require_orientation: bool = True,
+    min_conf: Optional[Dict[str, float]] = None,
 ) -> CriticResult:
     """
     Crítico estricto para el pipeline Tletl v5.
@@ -103,6 +118,11 @@ def strict_critic(
         Votos de múltiples modelos/reglas. No usado activamente en v5 (reservado).
     require_orientation : bool
         Si True y el gesto es de acción, valida que la orientación sea coherente.
+    min_conf : dict, optional
+        Umbral de confianza mínima por gesto (p.ej. `[critic.min_conf]` del toml
+        vía `tletl_core.config.critic_min_conf`). Los gestos ausentes usan
+        MIN_CONF del módulo. Antes la tabla estaba hardcodeada y el toml se
+        ignoraba: PINCH moría de día con 0.62–0.70 < 0.72 (validación 2026-07-02).
 
     Retorna
     -------
@@ -115,6 +135,7 @@ def strict_critic(
     features = features or {}
     gesture = str(gesture or "UNKNOWN")
     conf = _safe_float(confidence)
+    thresholds = resolve_min_conf(min_conf)
 
     # --- Gesto inválido ---
     if gesture not in VALID_GESTURES:
@@ -131,12 +152,12 @@ def strict_critic(
         return CriticResult(accepted=True, gesture="NEUTRAL", reason="reposo (NEUTRAL)")
 
     # --- Umbral de confianza mínima ---
-    min_conf = MIN_CONF.get(gesture, 0.72)
-    if conf < min_conf:
+    min_conf_gesture = thresholds.get(gesture, 0.72)
+    if conf < min_conf_gesture:
         return CriticResult(
             accepted=False,
             gesture="NEUTRAL",
-            reason=f"confianza baja para {gesture}: {conf:.2f} < {min_conf:.2f}",
+            reason=f"confianza baja para {gesture}: {conf:.2f} < {min_conf_gesture:.2f}",
         )
 
     # --- Validación de orientación para gestos de acción ---
@@ -145,7 +166,7 @@ def strict_critic(
 
         if not orientation_ok:
             # Sin features de orientación: aceptar solo si la confianza es muy alta
-            high_conf_threshold = max(0.82, min_conf + 0.08)
+            high_conf_threshold = max(0.82, min_conf_gesture + 0.08)
             if conf >= high_conf_threshold:
                 return CriticResult(
                     accepted=True,

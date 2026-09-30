@@ -1,7 +1,10 @@
+"""Tests de tools/bank_probe.py, tools/duel_lab.py y tools/healthcheck.py sobre el banco real."""
+
 from __future__ import annotations
 
-"""Tests de tools/bank_probe.py y tools/duel_lab.py sobre el banco real."""
-
+import tools.bank_probe as bank_probe
+import tools.duel_lab as duel_lab
+import tools.healthcheck as healthcheck
 from tools.bank_probe import probe_bank, format_report
 from tools.duel_lab import evaluate_knn, duel
 
@@ -36,3 +39,45 @@ def test_duel_orders_by_accuracy(bank_path):
     assert len(results) == 2
     # ordenado descendente por accuracy
     assert results[0]["accuracy"] >= results[1]["accuracy"]
+
+
+# ---------------------------------------------------------------------------
+# Docstrings de módulo (antes iban DESPUÉS de `from __future__` y no eran docstring)
+# ---------------------------------------------------------------------------
+
+def test_tools_have_real_module_docstrings():
+    for mod in (healthcheck, bank_probe, duel_lab):
+        assert mod.__doc__, f"{mod.__name__} sin docstring de módulo"
+        assert "Uso" in mod.__doc__
+
+
+def test_tool_defaults_follow_runtime_paths(bank_path):
+    from tletl_core.paths import default_bank_path
+    assert bank_probe.DEFAULT_BANK == default_bank_path()
+    assert duel_lab.DEFAULT_BANK == default_bank_path()
+    assert bank_probe.DEFAULT_BANK == bank_path
+
+
+# ---------------------------------------------------------------------------
+# healthcheck: rutas resueltas + check del banco vía bank_path_from_config
+# ---------------------------------------------------------------------------
+
+def test_healthcheck_main_ok_and_prints_resolved_paths(capsys, monkeypatch):
+    monkeypatch.delenv("TLETL_GESTURE_BANK", raising=False)
+    from tletl_core.config import (adaptive_path_from_config, bank_path_from_config,
+                                   bus_path_from_config, load_config)
+    cfg = load_config()
+    assert healthcheck.main() == 0
+    out = capsys.readouterr().out
+    assert "healthcheck OK" in out
+    assert str(bank_path_from_config(cfg)) in out
+    assert str(bus_path_from_config(cfg)) in out
+    assert str(adaptive_path_from_config(cfg)) in out
+    assert "critic min_conf" in out
+
+
+def test_healthcheck_fails_when_configured_bank_missing(capsys, monkeypatch, tmp_path):
+    monkeypatch.setenv("TLETL_GESTURE_BANK", str(tmp_path / "no_existe.jsonl"))
+    assert healthcheck.main() == 1
+    out = capsys.readouterr().out
+    assert "banco no encontrado" in out and "no_existe.jsonl" in out
