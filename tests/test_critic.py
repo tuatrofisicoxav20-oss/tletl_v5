@@ -42,7 +42,7 @@ def _feats_palm_front() -> dict:
 # ---------------------------------------------------------------------------
 
 def test_action_low_confidence_rejected():
-    """PINCH con confianza 0.30 (< MIN_CONF 0.72) debe ser rechazado."""
+    """PINCH con confianza 0.30 (< MIN_CONF 0.62) debe ser rechazado."""
     feats = _feats("PINCH")
     result = strict_critic("PINCH", 0.30, feats)
     assert isinstance(result, CriticResult)
@@ -181,12 +181,21 @@ def test_min_conf_table_lowers_pinch_threshold():
     assert result.gesture == "PINCH"
 
 
-def test_default_table_still_rejects_pinch_065():
-    """Sin tabla, manda MIN_CONF del módulo (PINCH 0.72): 0.65 se rechaza."""
-    result = strict_critic("PINCH", 0.65, _feats_palm_front())
+def test_default_table_rejects_pinch_below_062():
+    """Sin tabla manda MIN_CONF del módulo, que es la MISMA fuente que la config
+    (PINCH 0.62 desde v5.2): 0.55 se rechaza y 0.65 se acepta."""
+    result = strict_critic("PINCH", 0.55, _feats_palm_front())
     assert result.accepted is False
     assert result.gesture == "NEUTRAL"
-    assert "0.72" in result.reason
+    assert "0.62" in result.reason
+    assert strict_critic("PINCH", 0.65, _feats_palm_front()).accepted is True
+
+
+def test_module_min_conf_is_the_config_default_table():
+    """Una sola fuente de verdad: critic.MIN_CONF == config.CRITIC_MIN_CONF_DEFAULTS."""
+    from tletl_core.config import CRITIC_MIN_CONF_DEFAULTS
+    assert MIN_CONF == CRITIC_MIN_CONF_DEFAULTS
+    assert MIN_CONF is not CRITIC_MIN_CONF_DEFAULTS   # copia: mutar una no toca la otra
 
 
 def test_min_conf_missing_gestures_fall_back_to_module_defaults():

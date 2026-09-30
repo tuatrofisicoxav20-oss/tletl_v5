@@ -5,8 +5,9 @@
     python -m tools.bench_tracker --camera 0 --frames 150     # con cámara real (mano delante)
 
 Sirve para responder "¿de dónde salen mis 15 fps?": si el detector tarda ~12 ms
-y el bucle completo tarda 65 ms, el cuello no es MediaPipe. Compara con
-tools/bench_classifier.py (KNN) si existe.
+y el bucle completo tarda 65 ms, el cuello no es MediaPipe. El KNN se mide con
+`tests/test_classifier.py` (equivalencia + tiempo) o a mano:
+`python -c "from tletl_core.classifier import RobustKNNRuntime; ..."`.
 """
 
 from __future__ import annotations

@@ -61,7 +61,7 @@ action_conf = 0.52          # confianza mínima del KNN para ejecutar una acció
 
 [bus]
 path = ""                   # "" => ~/.tletl/tletl_state.json (env: TLETL_STATE_PATH). Blender lee la MISMA ruta.
-include_features = false    # true => cada mano lleva sus ~60 features (triplica el JSON)
+include_features = false    # true => cada mano lleva sus 67 features (triplica el JSON)
 udp_target = ""             # "host:puerto" para publicar cada frame por UDP (AutoCAD en Windows). env: TLETL_BUS_UDP
 
 [blender]

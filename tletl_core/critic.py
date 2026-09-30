@@ -21,7 +21,8 @@ Diferencias de API de orientación:
   - v5:   orientation_bucket(features) -> {'PALM_FRONT','BACK_HAND','SIDE_HAND','UNKNOWN'}
 
 Lógica portada:
-  - MIN_CONF por gesto (idénticos umbrales)
+  - MIN_CONF por gesto (idénticos umbrales salvo PINCH: 0.72 -> 0.62 en v5.2;
+    la tabla vive en tletl_core.config y [critic.min_conf] la sobreescribe)
   - ACTION_GESTURES más estrictos
   - Validación de orientación para gestos de acción (SIDE_HAND/UNKNOWN se bloquean)
   - Reglas blandas de palm_flatness_score y finger_depth_spread
@@ -34,21 +35,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+from .config import CRITIC_MIN_CONF_DEFAULTS
 from .orientation import ORIENTATION_KEYS, orientation_bucket
 
 
 VALID_GESTURES = {"OPEN_PALM", "FIST", "POINT", "VICTORY", "PINCH", "THREE", "NEUTRAL"}
 
-# Umbrales mínimos de confianza portados de v4.7 (MIN_CONF).
-MIN_CONF: Dict[str, float] = {
-    "OPEN_PALM": 0.70,
-    "FIST":      0.68,
-    "POINT":     0.69,
-    "VICTORY":   0.72,
-    "PINCH":     0.72,
-    "THREE":     0.72,
-    "NEUTRAL":   0.55,
-}
+# Umbrales mínimos de confianza por gesto. FUENTE ÚNICA: tletl_core.config
+# (CRITIC_MIN_CONF_DEFAULTS; [critic.min_conf] del toml los sobreescribe vía
+# pipeline). Vienen de v4.7 salvo PINCH, que bajó de 0.72 a 0.62 en v5.2 por la
+# evidencia de la validación diurna. Antes este módulo tenía su propia copia
+# con PINCH 0.72 y strict_critic() sin tabla contradecía a la config.
+MIN_CONF: Dict[str, float] = dict(CRITIC_MIN_CONF_DEFAULTS)
 
 # Gestos que disparan acciones: más estrictos en orientación y confianza.
 ACTION_GESTURES = {"PINCH", "POINT", "VICTORY", "THREE", "FIST"}

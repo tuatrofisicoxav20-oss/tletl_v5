@@ -41,6 +41,15 @@ muñeca, 1–4 pulgar, 5–8 índice, …). `extract_live_features` no cambia un
 línea, el KNN no cambia, las 2 652 muestras siguen siendo válidas. Cualquier
 otro detector con otra topología (o sin z) invalida parte del banco.
 
+Matiz honesto que salió al documentar: el banco se capturó con el extractor
+de v4.6 y el extractor vivo de v5 no produce exactamente el mismo conjunto de
+claves. De las 67 features que usa el KNN, una mano en vivo comparte 54 (el
+mínimo que exige el clasificador es 23), y las 13 restantes simplemente no
+participan en la distancia. Esto ya pasaba antes de este cambio y no depende
+del detector; el banco no guarda landmarks crudos, así que no se puede
+regenerar. La forma de cerrar esa brecha es capturar muestras nuevas con la
+herramienta actual (§4), que sí escribe las 67.
+
 **Rendimiento medido aquí (CPU, XNNPACK, frame 640×360 sin mano):**
 13.8 ms/frame en modo VIDEO con `num_hands=2`. Con mano presente sube algo
 (corre el modelo de landmarks por mano), pero sigue muy por debajo de los
