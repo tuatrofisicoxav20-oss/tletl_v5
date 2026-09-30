@@ -7,9 +7,11 @@ mapean 1:1 al vocabulario de Tletl (FIST, OPEN_PALM, POINT, VICTORY); el resto
 así que es una opinión INDEPENDIENTE del banco KNN: la app la pasa como
 `hint=` a `pipeline.process_features` y el core decide qué hacer con ella.
 
-Es OPCIONAL y viene apagado: se activa con `[tracker] gesture_hint = true` o
-`TLETL_GESTURE_HINT=1`. `GestureHint.create()` devuelve None (nunca lanza) si
-está apagado, si falta el modelo o si mediapipe no lo puede cargar.
+Es OPCIONAL y viene apagado: se activa con `[tracker] gesture_hint = true`,
+`TLETL_GESTURE_HINT=1` (la aplica `tletl_core.config.load_config`) o
+`--gesture-hint` (CLI > env > toml; este módulo solo lee el dict ya fusionado).
+`GestureHint.create()` devuelve None (nunca lanza) si está apagado, si falta el
+modelo o si mediapipe no lo puede cargar.
 
 Costo: es un segundo modelo por frame (~10 ms en CPU, corre su propio
 landmarker por dentro). Si la laptop va justa, déjalo apagado: mejora

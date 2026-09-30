@@ -48,6 +48,14 @@ def main() -> int:
     print(f"     bus:      {bus_path}")
     print(f"     adaptive: {adaptive_path}")
 
+    # Detector de manos: qué backend se usaría y si el modelo está (sin cargarlo).
+    try:
+        from apps.common.hand_tracker import describe_backend, format_backend_summary
+        info = describe_backend(cfg["tracker"])
+        print(f"     tracker:  {format_backend_summary(info)}")
+    except Exception as exc:  # noqa: BLE001 - el healthcheck del core no depende de mediapipe
+        print(f"     tracker:  no evaluado ({type(exc).__name__}: {exc})")
+
     if not bank.exists():
         print(f"[FAIL] banco no encontrado: {bank}")
         return 1

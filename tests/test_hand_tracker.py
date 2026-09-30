@@ -618,8 +618,9 @@ def test_gesture_hint_real_model_black_frame(monkeypatch):
     pytest.importorskip("mediapipe")
     model = _real_model("gesture_recognizer.task")
     monkeypatch.setenv("TLETL_GESTURE_MODEL", str(model))
-    monkeypatch.setenv("TLETL_GESTURE_HINT", "1")
-    hint = gh.GestureHint.create({"auto_download": False}, num_hands=2, log=lambda s: None)
+    # gesture_hint viene en el dict de config ya fusionado (load_config aplica la env var)
+    hint = gh.GestureHint.create({"auto_download": False, "gesture_hint": True}, num_hands=2,
+                                 log=lambda s: None)
     if hint is None:
         pytest.skip("GestureRecognizer no se pudo crear aquí")
     try:
