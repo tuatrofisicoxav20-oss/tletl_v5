@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Abre la herramienta de captura de gestos (escribe al banco JSONL).
+# Usa el mismo detector que la app (--backend auto|legacy|tasks; default [tracker].backend).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"

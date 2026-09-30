@@ -10,14 +10,17 @@ requires-python = ">=3.12"
 dependencies = [
     "numpy>=1.26",
     "opencv-python>=4.8",
+    # Sin tope: apps/common/hand_tracker.py soporta la Tasks API (>=0.10.31 y 1.x,
+    # backend "tasks", el principal) y la legacy mp.solutions (0.10.21-0.10.2x, respaldo).
     "mediapipe>=0.10.21",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+cad = ["ezdxf>=1.1"]
 
 [tool.setuptools]
-packages = ["tletl_core", "apps", "apps.fedora_control", "apps.blender_control", "tools"]
+packages = ["tletl_core", "apps", "apps.common", "apps.fedora_control", "apps.blender_control", "apps.autocad_control", "tools"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -2,5 +2,13 @@
 # El core y sus tests NO requieren mediapipe (trabajan sobre landmarks ya extraídos).
 # mediapipe solo hace falta para la app en vivo (cámara) y la captura de gestos.
 numpy>=1.26
+# opencv-python trae la ventana (panel de la app). Si solo alimentas el bus
+# (--headless) sirve igual opencv-python-headless; no instales los dos a la vez.
 opencv-python>=4.8
-mediapipe>=0.10.21   # requiere Python 3.12 (no disponible en 3.14 al momento de escribir)
+# Sin tope superior a propósito: apps/common/hand_tracker.py soporta las DOS APIs.
+#   0.10.21 – 0.10.2x : API legacy (mp.solutions)            -> backend "legacy"
+#   >= 0.10.31 y 1.x  : solo Tasks API (HandLandmarker)      -> backend "tasks"
+# backend = "auto" elige sola. Con Tasks hay que descargar los modelos una vez:
+#   ./launchers/tletl-fetch-models.sh
+# Requiere Python 3.12 (no disponible en 3.14 al momento de escribir).
+mediapipe>=0.10.21
